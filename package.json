@@ -1,0 +1,16 @@
+{
+  "name": "sanabot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "author": "BlockBeam22Y",
+  "license": "ISC",
+  "dependencies": {
+    "character.ai": "^1.0.0",
+    "discord.js": "^14.7.1",
+    "node_characterai": "^1.0.20"
+  }
+}
