@@ -8,7 +8,6 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
         const cache = require('../cache.json')
-        cache.channelId = interaction.channel.id
 
         const row = new ActionRowBuilder()
             .addComponents(
@@ -21,11 +20,18 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle(`${interaction.guild.name}'s invites leaderboard`)
             .setThumbnail(interaction.guild.iconURL())
-            .setDescription(`There are no records yet.\nBe the first to join the race!`)
+            .setDescription(
+                `There are no records yet.
+
+                Be the first to join the race!`
+            )
 
         const lbMessage = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true })
-        cache.messageId = lbMessage.id
 
-        fs.writeFileSync('../cache.json', JSON.stringify(cache))
+        cache[interaction.guild.id] = {
+            channelId: interaction.channel.id,
+            messageId: lbMessage.id,
+            invites: [],
+        }
     }
 }
