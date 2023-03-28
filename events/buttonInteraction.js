@@ -1,63 +1,73 @@
-const fs = require('node:fs')
 const { Events, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
+const cache = require('../cache.json')
 
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
         if (!interaction.isButton()) return
-        const cache = require('../cache.json')
-        const { messageId, invites } = cache[interaction.guild.id]
 
-        let invite = invites.find(invite => invite.user.id === interaction.user.id) 
+        const { guild, user } = interaction
+        const { channelId, messageId, invites } = cache[guild.id]
+
+        let invite = invites.find(invite => invite.user.id === user.id) 
 
         if (!invite) {
-            const newChannel = await interaction.guild.channels.create({
-                name: interaction.user.tag,
+            const newChannel = await guild.channels.create({
+                name: user.tag,
                 permissionOverwrites: [
                     {
-                        id: interaction.guild.id,
+                        id: guild.id,
                         deny: [PermissionFlagsBits.ViewChannel],
                     },
                 ],
             })
 
-            const newInvite = await interaction.guild.invites.create(newChannel, { maxAge: 0 })
+            const newInvite = await guild.invites.create(newChannel, { maxAge: 0 })
+            await guild.invites.fetch(newInvite)
 
             invite = {
                 code: newInvite.code,
                 user: {
-                    id: interaction.user.id,
-                    name: interaction.user.name,
-                    tag: interaction.user.tag,
+                    id: user.id,
+                    name: user.username,
+                    tag: user.tag,
                 },
-                joins: 0,
-                leaves: 0,
+                joins: [],
+                leaves: [],
                 timeStamp: newInvite.createdTimestamp,
                 channelId: newChannel.id,
             }
             invites.push(invite)
 
-            const lbMessage = interaction.channel.messages.cache.get(messageId)
+            const lbChannel = guild.channels.cache.get(channelId)
+            const lbMessage = lbChannel.messages.cache.get(messageId)
             const editedEmbed = new EmbedBuilder()
-                .setTitle(`${interaction.guild.name}'s invites leaderboard`)
-                .setThumbnail(interaction.guild.iconURL())
+                .setTitle(`${guild.name}'s invites leaderboard`)
+                .setThumbnail(guild.iconURL())
 
-            for (let i = 0; i < 10; i++) {
-                let invite = invites[i]
+            if (invites.length) {
+                for (let i = 0; i < 10; i++) {
+                    let invite = invites[i]
+                    if (!invite) break
 
-                if (invite) {
                     editedEmbed.addFields({ 
                         name: `${i + 1}. \`${invite.user.tag}\``,
-                        value: `${invite.code} - **${invite.joins - invite.leaves} invites**`
+                        value: `${invite.code} - **${invite.joins.length - invite.leaves.length} invites**`
                     })
                 }
+            } else {
+                editedEmbed.setDescription(
+                    `There are no records yet.
+    
+                    Be the first to join the race!`
+                )
             }
 
-            lbMessage.edit({ embeds: [editedEmbed], components: lbMessage.components })
+            await lbMessage.edit({ embeds: [editedEmbed], components: lbMessage.components })
         }
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: interaction.user.tag, iconURL: interaction.user.avatarURL() })
+            .setAuthor({ name: user.tag, iconURL: user.avatarURL() })
             .setDescription(
                 `Here's your invite link
 

@@ -1,5 +1,5 @@
-const fs = require('node:fs')
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js')
+const cache = require('../cache.json')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('...')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
-        const cache = require('../cache.json')
+        const guild = interaction.guild
 
         const row = new ActionRowBuilder()
             .addComponents(
@@ -18,8 +18,8 @@ module.exports = {
             )
 
         const embed = new EmbedBuilder()
-            .setTitle(`${interaction.guild.name}'s invites leaderboard`)
-            .setThumbnail(interaction.guild.iconURL())
+            .setTitle(`${guild.name}'s invites leaderboard`)
+            .setThumbnail(guild.iconURL())
             .setDescription(
                 `There are no records yet.
 
@@ -28,7 +28,7 @@ module.exports = {
 
         const lbMessage = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true })
 
-        cache[interaction.guild.id] = {
+        cache[guild.id] = {
             channelId: interaction.channel.id,
             messageId: lbMessage.id,
             invites: [],
