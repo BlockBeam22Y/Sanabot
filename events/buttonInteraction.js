@@ -8,7 +8,7 @@ module.exports = {
 
         await interaction.deferReply({ ephemeral: true })
 
-        const { guild, user, client } = interaction
+        const { guild, user } = interaction
         const { channelId, messageId, invites } = cache[guild.id]
 
         let invite = invites.find(invite => invite.user.id === user.id) 
