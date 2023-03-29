@@ -2,31 +2,21 @@ const { Events, EmbedBuilder } = require('discord.js')
 const cache = require('../cache.json')
 
 module.exports = {
-    name: Events.GuildMemberAdd,
+    name: Events.GuildMemberRemove,
     async execute(member) {
         const { guild, user } = member
-        await guild.invites.fetch()
 
         if (!cache[guild.id]) return
         const { channelId, messageId, invites } = cache[guild.id]
 
         for (let i = 0; i < invites.length; i++) {
-            guild.invites.cache.forEach(async guildInvite => {
-                if (invites[i].code !== guildInvite.code) return
+            invites[i].joins.forEach(async join => {
+                if (join.user.id !== user.id) return
 
-                if (invites[i].joins.length === guildInvite.uses) return
+                if (join.timeStamp !== member.joinedTimestamp) return
 
-                if (invites[i].user.id === user.id) return
+                invites[i].leaves.push(join)
 
-                invites[i].joins.push({
-                    user: {
-                        id: user.id,
-                        name: user.username,
-                        tag: user.tag,
-                    },
-                    timeStamp: member.joinedTimestamp,
-                })
-    
                 const lbChannel = guild.channels.cache.get(channelId)
                 const lbMessage = lbChannel.messages.cache.get(messageId)
                 const lbEmbed = lbMessage.embeds[0]
@@ -55,7 +45,7 @@ module.exports = {
                 }
 
                 await lbMessage.edit({ embeds: [editedEmbed], components: lbMessage.components })
-            })
+            });
         }
     }
 }

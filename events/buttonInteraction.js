@@ -6,14 +6,16 @@ module.exports = {
     async execute(interaction) {
         if (!interaction.isButton()) return
 
-        const { guild, user } = interaction
+        await interaction.deferReply({ ephemeral: true })
+
+        const { guild, user, client } = interaction
         const { channelId, messageId, invites } = cache[guild.id]
 
         let invite = invites.find(invite => invite.user.id === user.id) 
 
         if (!invite) {
             const newChannel = await guild.channels.create({
-                name: user.tag,
+                name: user.username,
                 permissionOverwrites: [
                     {
                         id: guild.id,
@@ -41,9 +43,12 @@ module.exports = {
 
             const lbChannel = guild.channels.cache.get(channelId)
             const lbMessage = lbChannel.messages.cache.get(messageId)
+            const lbEmbed = lbMessage.embeds[0]
             const editedEmbed = new EmbedBuilder()
-                .setTitle(`${guild.name}'s invites leaderboard`)
-                .setThumbnail(guild.iconURL())
+                .setAuthor(lbEmbed.author)
+                .setTitle(lbEmbed.title)
+                .setThumbnail(lbEmbed.thumbnail.url)
+                .setTimestamp(Date.parse(lbEmbed.timestamp))
 
             if (invites.length) {
                 for (let i = 0; i < 10; i++) {
@@ -76,6 +81,6 @@ module.exports = {
                 Invite as many people as you can!`
             )
 
-        await interaction.reply({ embeds: [embed], ephemeral: true })
+        interaction.editReply({ embeds: [embed], ephemeral: true })
     }
 }

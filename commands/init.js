@@ -7,7 +7,24 @@ module.exports = {
         .setDescription('...')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     async execute(interaction) {
-        const guild = interaction.guild
+        await interaction.deferReply()
+
+        const { client, guild, channel } = interaction
+
+        if (cache[guild.id]) {
+            const { channelId, messageId } = cache[guild.id]
+
+            const embed = new EmbedBuilder()
+                .setAuthor({ name: client.user.tag, iconURL: client.user.avatarURL() })
+                .setDescription(
+                    `There's an ongoing leaderboard right now
+
+                    [Go to message](https://discord.com/channels/${guild.id}/${channelId}/${messageId})`
+                )
+
+            interaction.editReply({ embeds: [embed] })
+            return
+        }
 
         const row = new ActionRowBuilder()
             .addComponents(
@@ -18,18 +35,20 @@ module.exports = {
             )
 
         const embed = new EmbedBuilder()
+            .setAuthor({ name: client.user.tag, iconURL: client.user.avatarURL() })
             .setTitle(`${guild.name}'s invites leaderboard`)
             .setThumbnail(guild.iconURL())
+            .setTimestamp()
             .setDescription(
                 `There are no records yet.
 
                 Be the first to join the race!`
             )
 
-        const lbMessage = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true })
+        const lbMessage = await interaction.editReply({ embeds: [embed], components: [row], fetchReply: true })
 
         cache[guild.id] = {
-            channelId: interaction.channel.id,
+            channelId: channel.id,
             messageId: lbMessage.id,
             invites: [],
         }
