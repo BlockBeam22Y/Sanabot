@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder } = require('discord.js')
 const cache = require('../cache.json')
+const { displayLeaderboard } = require('../auxFunctions')
 
 module.exports = {
     name: Events.GuildMemberRemove,
@@ -10,12 +11,17 @@ module.exports = {
         const { channelId, messageId, invites } = cache[guild.id]
 
         for (let i = 0; i < invites.length; i++) {
-            invites[i].joins.forEach(async join => {
-                if (join.user.id !== user.id) return
+            invites[i].logs.forEach(async log => {
+                if (log.user.id !== user.id) return
 
-                if (join.timeStamp !== member.joinedTimestamp) return
+                if (log.timeStamp !== member.joinedTimestamp) return
 
-                invites[i].leaves.push(join)
+                invites[i].leaves++
+                invites[i].logs.push({
+                    user: log.user,
+                    timeStamp: log.timeStamp,
+                    value: -1,
+                })
 
                 const lbChannel = guild.channels.cache.get(channelId)
                 const lbMessage = lbChannel.messages.cache.get(messageId)
@@ -26,23 +32,7 @@ module.exports = {
                     .setThumbnail(lbEmbed.thumbnail.url)
                     .setTimestamp(Date.parse(lbEmbed.timestamp))
     
-                if (invites.length) {
-                    for (let i = 0; i < 10; i++) {
-                        let invite = invites[i]
-                        if (!invite) break
-    
-                        editedEmbed.addFields({ 
-                            name: `${i + 1}. \`${invite.user.tag}\``,
-                            value: `${invite.code} - **${invite.joins.length - invite.leaves.length} invites**`
-                        })
-                    }
-                } else {
-                    editedEmbed.setDescription(
-                        `There are no records yet.
-        
-                        Be the first to join the race!`
-                    )
-                }
+                displayLeaderboard(editedEmbed, invites)
 
                 await lbMessage.edit({ embeds: [editedEmbed], components: lbMessage.components })
             });

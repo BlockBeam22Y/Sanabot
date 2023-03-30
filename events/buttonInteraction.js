@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder, PermissionFlagsBits } = require('discord.js')
 const cache = require('../cache.json')
+const { displayLeaderboard } = require('../auxFunctions')
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -9,7 +10,10 @@ module.exports = {
         await interaction.deferReply({ ephemeral: true })
 
         const { guild, user } = interaction
+        if (!cache[guild.id]) return
+        
         const { channelId, messageId, invites } = cache[guild.id]
+        if (interaction.message.id !== messageId) return
 
         let invite = invites.find(invite => invite.user.id === user.id) 
 
@@ -34,8 +38,9 @@ module.exports = {
                     name: user.username,
                     tag: user.tag,
                 },
-                joins: [],
-                leaves: [],
+                joins: 0,
+                leaves: 0,
+                logs: [],
                 timeStamp: newInvite.createdTimestamp,
                 channelId: newChannel.id,
             }
@@ -50,23 +55,7 @@ module.exports = {
                 .setThumbnail(lbEmbed.thumbnail.url)
                 .setTimestamp(Date.parse(lbEmbed.timestamp))
 
-            if (invites.length) {
-                for (let i = 0; i < 10; i++) {
-                    let invite = invites[i]
-                    if (!invite) break
-
-                    editedEmbed.addFields({ 
-                        name: `${i + 1}. \`${invite.user.tag}\``,
-                        value: `${invite.code} - **${invite.joins.length - invite.leaves.length} invites**`
-                    })
-                }
-            } else {
-                editedEmbed.setDescription(
-                    `There are no records yet.
-    
-                    Be the first to join the race!`
-                )
-            }
+            displayLeaderboard(editedEmbed, invites)
 
             await lbMessage.edit({ embeds: [editedEmbed], components: lbMessage.components })
         }

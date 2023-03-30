@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js')
+const { displayLeaderboard } = require('../auxFunctions')
 const cache = require('../cache.json')
 
 module.exports = {
@@ -50,23 +51,7 @@ module.exports = {
             .setThumbnail(guild.iconURL())
             .setTimestamp()
 
-        if (invites.length) {
-            for (let i = 0; i < 10; i++) {
-                let invite = invites[i]
-                if (!invite) break
-
-                embed.addFields({ 
-                    name: `${i + 1}. \`${invite.user.tag}\``,
-                    value: `${invite.code} - **${invite.joins.length - invite.leaves.length} invites**`
-                })
-            }
-        } else {
-            embed.setDescription(
-                `There are no records yet.
-
-                Be the first to join the race!`
-            )
-        }
+        displayLeaderboard(embed, invites)
 
         const lbMessage = await interaction.editReply({ embeds: [embed], components: [row], fetchReply: true })
 
